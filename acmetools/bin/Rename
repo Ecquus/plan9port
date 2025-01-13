@@ -1,0 +1,58 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "-h" ] && [ "$2" = "" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+	$p [-d dot] <from> <to> [-a|id|pattern]
+
+DESCRIPTION
+	$p renames an identifier in current selection of the
+	windows pointed by [-a|id|pattern], forwarded to Getids,
+	thus defaulting to \$winid (default window), using the
+	famous sam(1) idiom described in sam_tut.pdf.
+
+	By default, renaming is performed on the whole file (dot=,);
+	the -d option allows to narrow the scope by setting the
+	dot.
+
+EXAMPLE
+	Rename identifiers from "fs" to "ifs" on current window:
+		Rename fs ifs
+
+	Same, but perform renaming on current selection only:
+		Rename -d '' fs ifs
+		Rename -d .  fs ifs
+
+	Same, but on all opened C files/headers:
+		Rename -d . fs ifs '\.[ch]$'
+
+EOF
+	exit 0
+fi
+
+d=,
+
+if [ "$1" = "-d" ]; then
+	d="$2"
+	shift; shift
+fi
+
+if [ -z "$2" ]; then
+	echo `basename $0` '[-d dot] <from> <to> [-a|id|pattern]' >&2
+	exit 1
+fi
+
+dots=`echo -n $1 | sed 's/././g;s/$/./'`
+
+cmd="Edit ${d}x/[a-zA-Z0-9]+/g/$1/v/$dots/c/$2/"
+
+Getids $3 | while read x; do
+	Do "$cmd" $x
+done

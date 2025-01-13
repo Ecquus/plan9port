@@ -1,0 +1,36 @@
+#!/bin/bash -e
+
+if [ "$1" = "-h" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+
+DESCRIPTION
+	$p creates a new virtual window where the user can search
+	for files dynamically in the current working directory by
+	providing a search string in the tagline. The search string
+	should be written between the parentheses of the Fuzzy() word.
+EOF
+	exit 0
+fi
+
+SCRIPT_DIR="$(readlink --canonicalize-existing $(dirname $0))"
+REPO_DIR="$(cd "${SCRIPT_DIR}" && git rev-parse --show-toplevel)"
+source "${REPO_DIR}/lib/Fuzzy.sh"
+
+WINDOW_NAME="$(pwd)/+Ff"
+
+function find_files() {
+	local -r input="${1}"
+	params=()
+	if [[ -n "${input}" ]]; then
+		params+=("-iregex" ".*${input}.*")
+	fi
+	find ~+ "${params[@]}" | sort
+}
+
+run_fuzzy "find_files" "${WINDOW_NAME}"

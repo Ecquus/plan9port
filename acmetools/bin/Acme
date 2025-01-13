@@ -1,0 +1,58 @@
+#!/bin/bash -e
+
+if [ "$1" = "-h" ] && [ "$2" = "" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+	$p [args...]
+
+DESCRIPTION
+	$p is a basic wrapper to launch acme(1). It starts
+	the plumber if needed, set a few convenient environment
+	variable, and will periodically create a
+	\$HOME/acme.dumps/autodump.dump using "XDump autodump".
+EOF
+	exit 0
+fi
+
+FONT="/mnt/font/Agave-Regular/12a/font"
+
+export PATH
+export EDITOR=E
+export PAGER=cat
+
+# NOTE: default plumb rules file is $HOME/lib/plumbing
+# (see e.g. plumb(7))
+if 9p ls acme &>/dev/null; then
+    timestamp="$(date +%H%M%S)"
+    export NAMESPACE="/tmp/ns.${USER}.${timestamp}"
+    mkdir -p "${NAMESPACE}"
+fi
+pgrep fontsrv &>/dev/null  && killall fontsrv || 9 fontsrv &
+pgrep plumber &>/dev/null && killall plumber || 9 plumber &
+acme -a -f "${FONT}" "$@" &
+acme_pid=$!
+
+# Wait a little for the filesystem to be up
+sleep 3
+# Exit if a Hook already runs
+pgrep Hook && exit 0
+Hook &>/dev/null &
+
+# Automatically dump to ~/acme.dumps/autodump.dump
+# every 10min; useful on crashes, depleted battery, etc.
+n=`expr 10 '*' 60`
+while true; do
+	sleep $n
+
+	# acme's dead
+	if ! ps -p $acme_pid >/dev/null; then
+		exit 0
+	fi
+	XDump autodump -k
+done
+

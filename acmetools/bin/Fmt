@@ -1,0 +1,20 @@
+#!/bin/bash -e
+
+if [ "$1" = "-h" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+	$p <id>
+
+DESCRIPTION
+	$p formats text from stdin and prints it to stdout.
+EOF
+	exit 0
+fi
+
+TEXT="$(cat)"
+fmt -72 <<< "${TEXT}"

@@ -1,0 +1,23 @@
+#!/bin/bash -e
+
+if [ "$1" = "-h" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h|<winid>]
+
+DESCRIPTION
+	$p loads tags in the current window's tagbar for working with
+	directories. It takes an optional window id as an argument,
+	which defaults to the current window's ID if not specified.
+
+EOF
+	exit 0
+fi
+
+id="${1:-${winid}}"
+tags=" dirtree Term Ft Ff Proj.Ft Proj.Ff"
+Write tag "${tags}" "${id}"

@@ -1,0 +1,25 @@
+#!/bin/bash -e
+
+if [ "$1" = "-h" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+
+DESCRIPTION
+	$p creates a new virtual window where the user can search
+	for files dynamically in the current project by providing a
+	search string in the tagline. The search string should be
+	written between the parentheses of the Fuzzy() word.
+EOF
+	exit 0
+fi
+
+SCRIPT_DIR="$(readlink --canonicalize-existing $(dirname $0))"
+REPO_DIR="$(cd "${SCRIPT_DIR}" && git rev-parse --show-toplevel)"
+pushd "${REPO_DIR}" &>/dev/null
+Ff
+popd &>/dev/null

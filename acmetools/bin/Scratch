@@ -1,0 +1,19 @@
+#!/bin/bash -e
+
+if [ "$1" = "-h" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+
+DESCRIPTION
+	$p shows a dedicated scratch window, which is useful for
+	temporary editing tasks. The window's name is \$HOME/+scratch.
+EOF
+	exit 0
+fi
+
+Open -n -u "${HOME}/+scratch"

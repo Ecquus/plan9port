@@ -1,0 +1,94 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "-h" ] && [ "$2" = "" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+	$p <to> [-a|id|pattern]
+
+DESCRIPTION
+	Move (mv(1)) current file, or the one pointed by [-a|id|pattern],
+	to a new one, on the filesystem that is, and updating acme's
+	buffer's name accordingly.
+
+	If 'to' doesn't start with a leading '/', renaming is performed
+	relatively instead of absolutely.
+
+	If the current buffer points to a file (by opposition to a directory),
+	and 'to' ends with a '/', then the file pointed by the current buffer
+	is moved to the directory pointed by 'to'.
+
+	If 'to' describes a missing path, intermediate directories
+	are created (mkdir(1) -p); existing file is overwritten,
+	following mv(1)' semantic.
+
+EXAMPLE
+	In each of the example below, the source filename is
+	to be interpreted as the current buffer's name.
+
+	Renaming "/home/foo/bar.c" to "/home/foo/baz.c":
+		Mv /home/foo/baz.c
+		Mv baz.c
+
+	Renaming "/tmp/bar/" to "/tmp/foo/":
+		Mv foo
+		Mv foo/
+
+	Renaming "foo.c" to "foo/bar/foo.c":
+		Mv foo/bar/
+
+	Renaming "foo.c" to "foo/bar":
+		Mv foo/bar
+
+BUGS:
+	We may want to allow regexp(7) with capture, so as to allow
+	renaming multiple files/buffers at once.
+
+	We require realpath(1) to be available to clean up the path,
+	e.g. in case of 'Mv ../../'.
+
+EOF
+	exit 0
+fi
+
+if [ -z "$1" ]; then
+	echo `basename $0` '<to> [-a|id|pattern]' >&2
+	exit 1
+fi
+
+if ! which realpath >/dev/null; then
+	# seems standard enough
+	echo 'realpath(1) not found' 1>&2
+	exit 1
+fi
+
+# NOTE: moving multiple buffers to a single location
+# is likely a bug, hence we assume only one input file.
+Getids $2 | sed 1q | while read x; do
+	y=`Getfn $x`
+
+	to="$1"
+	if ! echo "$to" | grep -q '^/'; then
+		to=`dirname $y`/$to
+	fi
+
+	mkdir -p `dirname $to`
+
+	if [ -f "$y" ] && echo "$to" | grep -q '/$'; then
+		mkdir -p $to
+		to=$to`basename $y`
+	fi
+
+	to=`realpath $to`
+
+	if [ -e "$y" ]; then mv "$y" "$to"; fi
+
+	Write ctl "name $to\n" $x
+	Write ctl get          $x
+done

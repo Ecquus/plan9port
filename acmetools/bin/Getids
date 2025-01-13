@@ -1,0 +1,70 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "-h" ] && [ "$2" = "" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+	$p [-a|id|pattern]
+
+DESCRIPTION
+	This is a key script; goals are:
+
+		- to transform a pattern to a list of acme buffer IDs;
+		- allow easy targetting the special '+Buffer' window;
+		- to default to current window (\$winid).
+
+	When called with no arguments, simply display \$winid, failing
+	with an error code if it is not set.
+
+	When called with -a, look for a +Buffer window, creating it
+	if needed, and display its id.
+
+	When called with a number, assume an existing windo id, and
+	display it.
+
+	Otherwise, assume argument is an awk(1) pattern, and display
+	all matching buffers IDs, one per line.
+EOF
+	exit 0
+fi
+
+# No $1, no $winid, error
+if [ -z "$1" ] && [ -z "$winid" ]; then
+	exit 1
+
+# No $1: use $winid
+elif [ -z "$1" ]; then
+	echo $winid
+
+# -a (auto) : write to +Buffer
+elif [ "$1" = "-a" ]; then
+	# Ensure +Buffer exists. In case there are many, just keep one.
+	# NOTE: we're opening it quietly (-q) for otherwise, the
+	# mouse jumps to the buffer, as it's beeing forced to be
+	# displayed. Perhaps we could add a -b aside of -a to
+	# control the behavior.
+	x=`Open -n -q -p -u '+Buffer' '+Buffer$'`
+
+	# Ensure +Buffer is prefixed with pwd (e.g. grep -n)
+	if [ "$2" != "-k" ]; then
+		echo 'name '`pwd`'/+Buffer' | 9p write acme/$x/ctl
+	fi
+	echo $x
+
+# $1 is a single integer: assume existing acme window ID
+elif echo "$1" | grep -q '^[0-9]\+$'; then
+	echo $1
+
+# Otherwise, assume awk pattern and grab all windows associated
+# to this pattern; numerically sort IDs.
+else
+	p="$(echo "${1}" | sed 's,/,\\\/,g')"
+	p="$(echo "${p}" | sed 's,+,\\+,g')"
+	9p read acme/index | awk '$6 ~ /'$p'/ { print $1 }' | sort -n
+fi

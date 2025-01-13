@@ -1,0 +1,201 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "-h" ] && [ "$2" = "" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+	$p [-t [-a|id|pattern]] [-e [-a|id|pattern]] [-m] [args]
+	$p [-o [-a|id|pattern]]                      [-m] [args]
+
+DESCRIPTION
+	$p is a smart script running a command automagically inferred
+	from file/filename, redirecting its stdout/stderr to the buffers
+	pointed by -t/-e/-o, after having written all buffers.
+
+	User is expected to complete/adjust this script following
+	his need. In particular, the \$errp variable allows to
+	pipe stderr to a command before sending to the error buffer
+	pointed by -e/-o: this can be used for instance to adjust
+	error messages to match plumbing rules.
+
+	The buffers are automatically cleaned before hand.
+
+	-t selects stdout buffer, forwarding [-a|id|pattern] to Getids
+	-t selects stderr buffer, forwarding [-a|id|pattern] to Getids
+
+	-o is a shortcut to set both -t and -e.
+
+	-m will force the use of a Makefile by going up to / from current
+	buffer's directory, until a Makefile is found.
+
+	As a convenience, the \$ARGS environment variable is feed to the
+	program called to execute/compile the target. By comparison, the
+	[args] are forwarded to the executed/compiled target. This allows
+	specifying ad-hoc options.
+
+EXAMPLES
+	1. By default, on a buffer pointing to a Makefile, 'Run tests' will:
+		- Put all buffers
+		- Run 'make tests', redirecting stdin/stdout to '+Buffer', creating
+		  it if necessary, and cleaning it beforehand.
+
+	2. If executing 'Run -m tests' on a file /home/user/project/lib/lib.go,
+	and if a /home/user/project/Makefile file exist, will use that
+	makefile in a 'make tests'.
+
+	3. With the default setup, 'Run -- -m x' on a .c file will compile
+	the C file (assuming single file project) and execute the resulting
+	binary with '-m x' as CLI arguments.
+
+	4. 'ARGS=--show-trace Run' on a .nix file will attempt to execute the
+	.nix file, launching the nix interpreter with '--show-trace'.
+EOF
+	exit 0
+fi
+
+# XXX This is redundant with Exec, but so far needed
+# because of $cmd's use of $@.
+while getopts "t:e:o:m" opt; do
+	case "$opt" in
+	t) to=$OPTARG ;;
+	e) err=$OPTARG ;;
+	o) to=$OPTARG; err=$OPTARG ;;
+	m) mk=1
+	esac
+done
+
+shift $((OPTIND-1))
+
+if [ -z "$to" ];  then to=-a;  fi
+if [ -z "$err" ]; then err=-a; fi
+
+fn=`Getfn`
+errp=cat
+
+# Forced make(1)
+if [ -n "$mk" ]; then
+	d=$fn
+	while [ "$d" != "/" ]; do
+		if [ -f "$d/Makefile" ] || [ -f "$d/makefile" ]; then
+			# NOTE: we're not using make -C as we really do want
+			# to be in $d for +Buffer's automatic $PWD to be relative
+			# to the Makefile we're about to execute (e.g. for relative
+			# compilation error messages to point to the proper place).
+			#
+			# -C would work but be redundant with the cd(1).
+			cd $d
+			cmd="make $@"
+			break
+		fi
+		d=`dirname $d`
+	done
+	if [ -z "$cmd" ]; then
+		echo "No Makefile found from" `dirname $fn`
+		exit 1
+	fi
+
+# make(1)
+elif [ -f "$fn/Makefile" ] || [ `basename $fn` = "Makefile" ]; then
+	cmd="make $@"
+
+# Golang
+#
+elif echo $fn | grep -q '\.go$'; then
+# NOTE: The following in addition to $fn, use all .go files in
+# $fn's directory that aren't _test.go files and which do not
+# contain a main(). This is clumsy, but may prove useful at some
+# point.
+#	# (extra file for while's subshell)
+#	tmpfn=`mktemp /tmp/Run.XXXXXX`
+#	ls `dirname $fn`/*.go | grep -v '_test\.go$' | grep -v "^$fn\$" | while read x; do
+#		if grep -qv '^func[ \t]+main' "$x"; then
+#			echo $x >> $tmpfn
+#		fi
+#	done
+#	echo $fn >> $tmpfn
+#	cmd="go run $(cat $tmpfn | tr -s '\n' ' ') $@"
+#	rm $tmpfn
+
+	cmd="go run $ARGS $fn $@"
+
+# C
+elif echo $fn | grep -q '\.c$'; then
+	if [ -z "$CC" ]; then CC="cc -ansi -pedantic -Wall -Wextra"; fi
+	cmd="$CC -o /tmp/a.out $ARGS $fn && /tmp/a.out $@"
+
+# Haskell
+elif echo $fn | grep -q '\.hs$'; then
+	cmd="ghc -Wno-tabs -o /tmp/a.out $ARGS $fn && /tmp/a.out $@"
+
+# Scheme/racket
+# awk 'BEGIN{n=1}NR==1&&/#!.*racket/{n=0}END{exit n}' would work too
+elif ! sed -n '/^#!.*racket$/{q1}' $fn; then
+	cmd="racket $ARGS $fn $@"
+
+# JavaScript
+elif echo $fn | grep -q '\.\(js\|cjs\)$'; then
+	cmd="node $ARGS $fn $@"
+
+# Python
+elif echo $fn | grep -q '\.py$' || ! sed -n '/^#!.*python/{q1}' $fn ; then
+	cmd="python $ARGS $fn $@"
+	# acme(1)/plumb(1) friendly output
+	errp='sed "s/\", line \([0-9]\+\)/:\1/g"'
+
+# Perl
+elif echo $fn | grep -q '\.\(pl\|t\)$'; then
+	cmd="perl -MData::Dumper $ARGS $fn $@"
+	# acme(1)/plumb(1) friendly output
+	errp='sed "s/ line \([0-9]\+\)/:\1/g"'
+
+# LaTeX
+elif echo $fn | grep -q '\.tex$'; then
+	# XXX/TODO: if there are multiple xpdf opened, ctrl+r
+	# is only sent to one of them, so narrow the search to
+	# the one likely to match our current file.
+#	update="xdotool search --onlyvisible --class Xpdf key ctrl+r"
+	rpdf=`echo $fn | sed 's/\.tex$/.pdf/'`
+	pdf=`basename $fn .tex`.pdf
+
+	# XXX clumsy; bibtex /path/to/foo doesn't work
+	bib="echo -n ''"
+	if grep -q '\\bibliography' $fn; then
+		cd `dirname $fn`
+		x=`basename $fn .tex`
+		bib="bibtex $x"
+	fi
+	# xdotool with exit with non-zero code when search fails
+	update="(xdotool search --onlyvisible --name '.*$pdf' key ctrl+r || xpdf $rpdf)"
+	pl="pdflatex -shell-escape $ARGS"
+#	pl="lualatex -shell-escape $ARGS"
+	cmd="$pl $fn $@ && $bib && $pl $fn $@ && $pl $fn $@ && $update"
+
+# Nix
+elif echo $fn | grep -q '\.nix$'; then
+	cmd="nix-instantiate --eval $ARGS $fn"
+
+# R scripts
+elif echo $fn | grep -q '\.r$'; then
+	cmd="Rscript $ARGS $fn $@"
+
+# Man pages
+elif echo $fn | grep -q '[1-9]$'; then
+	cmd="man $ARGS $fn"
+
+# Assume executable script
+else
+	cmd="chmod +x $fn; set -f; $fn $@; set +f"
+
+	# For shell scripts, acme(1)/plumb(1) friendly output
+	if ! sed -n '/^#.*sh$/{q1}' $fn; then
+		errp='sed "s/: line \([0-9]\+\)/:\1/g"'
+	fi
+fi
+
+XPutall && Exec -t "$to" -e "$err" -q "$errp" "$cmd"

@@ -1,0 +1,29 @@
+#!/bin/bash -eu
+
+if [ "$1" = "-h" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+	$p <cmd>
+
+DESCRIPTION
+	$p executes the provided command or shell script in an external
+	terminal window. The terminal window will close after the
+	command exits.
+EOF
+	exit 0
+fi
+
+SCRIPT_FILE="${1}"
+
+path="$(readlink --canonicalize-existing "$(which "${SCRIPT_FILE}")")"
+if file "${path}" | grep -q "shell script"; then
+    command=("bash" "-xc" "$(cat ${path})" "$@")
+else
+    command=("${path}")
+fi
+konsole --separate -e "${command[@]}"

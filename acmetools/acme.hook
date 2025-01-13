@@ -1,0 +1,30 @@
+#!/bin/bash -eu
+
+if [ -z "${1}" ]; then
+	echo "$(basename ${0})" '<winid>' 1>&2
+	exit 1
+fi
+
+SCRIPT_DIR="$(dirname $(readlink --canonicalize-existing ${0}))"
+REPO_DIR="$(cd "${SCRIPT_DIR}" && git rev-parse --show-toplevel)"
+source "${REPO_DIR}/lib/Common.sh"
+
+id="${1}"
+
+# Set common tags in the tagbar
+Tag.Common "${id}"
+
+# Set file-type specific tags in the tagbar when a new window is opened
+file_type="$(file "$(readlink --canonicalize-existing "$(Getfn "${id}")")")"
+if [[ -n "${file_type}" ]] && ! grep -q "No such file or directory" <<< "${file_type}"; then
+	if grep -q "directory" <<< "${file_type}"; then
+        grep -q "Tag.Dir" <<< "$(Read tag "${id}")" \
+            ||  Write tag "Tag.Dir" "${id}"
+	elif grep -q "shell script" <<< "${file_type}"; then
+	    grep -q "Tag.Sh" <<< "$(Read tag "${id}")" \
+	        || Write tag "Tag.Sh" "${id}"
+	elif grep -q "text" <<< "${file_type}"; then
+	    grep -q "Tag.Text" <<< "$(Read tag "${id}")" \
+	        || Write tag "Tag.Text" "${id}"
+    fi
+fi

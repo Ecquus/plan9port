@@ -1,0 +1,20 @@
+#!/bin/bash -e
+
+if [ "$1" = "-h" ]; then
+	p=`basename $0`
+	cat <<EOF
+NAME
+	$p
+
+SYNOPSYS
+	$p [-h]
+
+DESCRIPTION
+	$p surrounds text from stdin with double quotes; resulting
+	output on stdout.
+EOF
+	exit 0
+fi
+
+TEXT="$(cat)"
+echo -n \"${TEXT}\"
