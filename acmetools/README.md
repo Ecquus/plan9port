@@ -1,8 +1,30 @@
 # Introduction
 This repository was forked from https://github.com/mbivert/acme-tools and integrated
 in the Plan9 From User Space fork so that every Plan9 and Acme-related script and tool
-is in one repository to ease searching and navigation. Below there is the original contents
-of the README file.
+is in one repository to ease searching and navigation.
+
+# Install
+- Run `make bin/See` to compile the See utility.
+- Symlink ${HOME}/acme.hook to the acme.hook script found in the root directory.
+- Create an acme.sh wrapper script that sources your local environment variables and
+  start the Acme script.
+- The environment variables can be sourced from another local script, for example
+  setup-plan9.sh:
+  ```
+  #!/bin/bash -eu
+
+  export PLAN9="<plan9port-git-repo-path>"
+  export PATH="${PLAN9}/acmetools/bin:${PATH}:${PLAN9}/bin"
+  export SHELL="/bin/bash"
+  export BROWSER="librewolf"
+  export acmeshell="/bin/bash"
+  export EDITOR=E
+  export PAGER=cat
+  ```
+
+# Original README
+
+Below there is the original contents of the README file.
 
 We provide some tools thereafter described, aiming at reducing the amount of windows,
 and ease to some extent Acme's scriptability, pushing
