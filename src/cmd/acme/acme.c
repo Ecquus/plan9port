@@ -11,9 +11,11 @@
 #include <libsec.h>
 #include "dat.h"
 #include "fns.h"
-	/* for generating syms in mkfile only: */
-	#include <bio.h>
-	#include "edit.h"
+/* user configuration */
+#include "config.h"
+/* for generating syms in mkfile only: */
+#include <bio.h>
+#include "edit.h"
 
 void	mousethread(void*);
 void	keyboardthread(void*);
@@ -111,6 +113,9 @@ threadmain(int argc, char *argv[])
 		if(mtpt == nil)
 			goto Usage;
 		break;
+	case 'n':
+		current_colorscheme = DarkColorScheme;
+		break;
 	case 'r':
 		swapscrollbuttons = TRUE;
 		break;
@@ -121,7 +126,7 @@ threadmain(int argc, char *argv[])
 		break;
 	default:
 	Usage:
-		fprint(2, "usage: acme -a -c ncol -f fontname -F fixedwidthfontname -l loadfile -W winsize\n");
+		fprint(2, "usage: acme -a -c ncol -f fontname -F fixedwidthfontname -l loadfile -m -n -r -W winsize\n");
 		threadexitsall("usage");
 	}ARGEND
 
@@ -548,7 +553,7 @@ mousethread(void *v)
 		case MResize:
 			if(getwindow(display, Refnone) < 0)
 				error("attach to window");
-			draw(screen, screen->r, display->white, nil, ZP);
+			draw(screen, screen->r, textcols[BACK], nil, ZP);
 			iconinit();
 			scrlresize();
 			rowresize(&row, screen->clipr);
@@ -1038,21 +1043,20 @@ iconinit(void)
 {
 	Rectangle r;
 	Image *tmp;
+	ColorScheme c = colorschemes[current_colorscheme];
 
 	if(tagcols[BACK] == nil) {
-		/* Blue */
-		tagcols[BACK] = allocimagemix(display, DPalebluegreen, DWhite);
-		tagcols[HIGH] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DPalegreygreen);
-		tagcols[BORD] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DPurpleblue);
-		tagcols[TEXT] = display->black;
-		tagcols[HTEXT] = display->black;
+		tagcols[BACK]	= allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.tag_bg);
+		tagcols[HIGH]	= allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.tag_hlbg);
+		tagcols[BORD]	= allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.col_button);
+		tagcols[TEXT]	= allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.tag_fg);
+		tagcols[HTEXT]	= allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.tag_hlfg);
 
-		/* Yellow */
-		textcols[BACK] = allocimagemix(display, DPaleyellow, DWhite);
-		textcols[HIGH] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DDarkyellow);
-		textcols[BORD] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DYellowgreen);
-		textcols[TEXT] = display->black;
-		textcols[HTEXT] = display->black;
+		textcols[BACK] 	= allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.text_bg);
+		textcols[HIGH] 	= allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.text_hlbg);
+		textcols[BORD] 	= allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.scroll_bg);
+		textcols[TEXT] 	= allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.text_fg);
+		textcols[HTEXT] = allocimage(display, Rect(0,0,1,1), RGBA32, 1, c.text_hlfg);
 	}
 
 	r = Rect(0, 0, Scrollwid, font->height+1);
@@ -1074,15 +1078,15 @@ iconinit(void)
 	draw(modbutton, r, tagcols[BACK], nil, r.min);
 	border(modbutton, r, ButtonBorder, tagcols[BORD], ZP);
 	r = insetrect(r, ButtonBorder);
-	tmp = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DMedblue);
+	tmp = allocimage(display, Rect(0,0,1,1), screen->chan, 1, c.tmp_button);
 	draw(modbutton, r, tmp, nil, ZP);
 	freeimage(tmp);
 
 	r = button->r;
-	colbutton = allocimage(display, r, screen->chan, 0, DPurpleblue);
+	colbutton = allocimage(display, r, screen->chan, 0, c.win_button);
 
-	but2col = allocimage(display, r, screen->chan, 1, 0xAA0000FF);
-	but3col = allocimage(display, r, screen->chan, 1, 0x006600FF);
+	but2col = allocimage(display, r, screen->chan, 1, c.button2_hl);
+	but3col = allocimage(display, r, screen->chan, 1, c.button3_hl);
 }
 
 /*

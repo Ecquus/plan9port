@@ -32,7 +32,7 @@ Buffer	snarfbuf;
  *	n: length of s  (s is *not* NUL-terminated)
  */
 
-void doabort(Text*, Text*, Text*, int, int, Rune*, int);
+void	doabort(Text*, Text*, Text*, int, int, Rune*, int);
 void	del(Text*, Text*, Text*, int, int, Rune*, int);
 void	delcol(Text*, Text*, Text*, int, int, Rune*, int);
 void	dotfiles(Text*, Text*, Text*, int, int, Rune*, int);

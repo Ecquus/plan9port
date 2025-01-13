@@ -8,6 +8,7 @@ OFILES=\
 	addr.$O\
 	buff.$O\
 	cols.$O\
+	config.$O\
 	disk.$O\
 	ecmd.$O\
 	edit.$O\
@@ -29,6 +30,7 @@ OFILES=\
 HFILES=dat.h\
 	edit.h\
 	fns.h\
+	config.h\
 
 <$PLAN9/src/mkone
 <$PLAN9/src/mkdirs
