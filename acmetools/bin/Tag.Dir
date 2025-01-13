@@ -19,5 +19,5 @@ EOF
 fi
 
 id="${1:-${winid}}"
-tags=" dirtree Term Ft Ff Proj.Ft Proj.Ff"
+tags=" See Term Ft Ff Proj.Ft Proj.Ff"
 Write tag "${tags}" "${id}"

@@ -2,7 +2,7 @@
 
 SCRIPT_DIR="$(readlink --canonicalize-existing $(dirname $0))"
 REPO_DIR="$(cd "${SCRIPT_DIR}" && git rev-parse --show-toplevel)"
-source "${REPO_DIR}/lib/Common.sh"
+source "${REPO_DIR}/acmetools/lib/Common.sh"
 
 WINDOW_NAME="$(git rev-parse --show-toplevel)/+Git"
 

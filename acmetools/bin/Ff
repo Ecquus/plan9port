@@ -20,7 +20,7 @@ fi
 
 SCRIPT_DIR="$(readlink --canonicalize-existing $(dirname $0))"
 REPO_DIR="$(cd "${SCRIPT_DIR}" && git rev-parse --show-toplevel)"
-source "${REPO_DIR}/lib/Fuzzy.sh"
+source "${REPO_DIR}/acmetools/lib/Fuzzy.sh"
 
 WINDOW_NAME="$(pwd)/+Ff"
 
