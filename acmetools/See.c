@@ -188,14 +188,21 @@ threadmain(int argc, char *argv[])
 	// XXX $HOME set but not $home
 	putenv("home", getenv("HOME"));
 
-	if (argc > 1)
-		cd(argv[1]);
-	else
-		cd(getenv("home"));
-
+	char *initpath = NULL;
+	if (argc > 0) {
+		if (strcmp(argv[0], ".") == 0) {
+			initpath = getenv("PWD");
+		} else if (strcmp(argv[0], "~") == 0) {
+			initpath = getenv("home");
+		} else {
+			initpath = argv[0];
+		}
+	} else {
+		initpath = getenv("home");
+	}
+	cd(initpath);
 	for (;;) {
 		winreadevent(win, &e1);
-
 		if (e1.c1 == 'M') {
 			readevent(&e1);
 			if (e1.flag & 2) {
