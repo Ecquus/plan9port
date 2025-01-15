@@ -104,7 +104,7 @@ const ColorScheme acme_default = {
 
 ColorScheme colorschemes[2] = {
 	acme_default, /* LightColorScheme */
-	wilmersdorf, /* DarkColorScheme */
+	acme2k_dark, /* DarkColorScheme */
 };
 
 int current_colorscheme = LightColorScheme;

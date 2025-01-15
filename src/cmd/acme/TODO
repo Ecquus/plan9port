@@ -1,0 +1,2 @@
+- Tab should insert 4 spaces
+- Tab should insert either 4 spaces or tab character depending on a flag like how "Indent" works

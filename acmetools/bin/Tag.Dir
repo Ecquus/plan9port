@@ -19,5 +19,5 @@ EOF
 fi
 
 id="${1:-${winid}}"
-tags=" See Term Ft Ff Proj.Ft Proj.Ff"
+tags=" See Term Ft Ff Proj.Ft Proj.Ff win "
 Write tag "${tags}" "${id}"

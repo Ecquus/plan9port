@@ -142,7 +142,9 @@ readevent(Event *e)
 	winwriteevent(win, e);
 }
 
-void printusage() {
+void
+printusage()
+{
 	char *fmt =
         "NAME\n"
         "    See\n"
@@ -188,17 +190,27 @@ threadmain(int argc, char *argv[])
 	// XXX $HOME set but not $home
 	putenv("home", getenv("HOME"));
 
-	char *initpath = NULL;
+	char initpath[Pathmax];
+	memset(initpath, 0, sizeof initpath);
 	if (argc > 0) {
-		if (strcmp(argv[0], ".") == 0) {
-			initpath = getenv("PWD");
-		} else if (strcmp(argv[0], "~") == 0) {
-			initpath = getenv("home");
+		if (*argv[0] != '/') {
+			if (*argv[0] == '.') {
+				strcat(initpath, getenv("PWD"));
+				if (strlen(argv[0]) > 1) {
+					strcat(initpath, argv[0]+1);
+				}
+			} else if (*argv[0] == '~') {
+				strcat(initpath, getenv("home"));
+			} else {
+				strcat(initpath, getenv("PWD"));
+				strcat(initpath, "/");
+				strcat(initpath, argv[0]);
+			}
 		} else {
-			initpath = argv[0];
+			strcat(initpath, argv[0]);
 		}
 	} else {
-		initpath = getenv("home");
+		strcat(initpath, getenv("home"));
 	}
 	cd(initpath);
 	for (;;) {
