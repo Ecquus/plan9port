@@ -7,7 +7,7 @@ fi
 
 SCRIPT_DIR="$(dirname $(readlink --canonicalize-existing ${0}))"
 REPO_DIR="$(cd "${SCRIPT_DIR}" && git rev-parse --show-toplevel)"
-source "${REPO_DIR}/lib/Common.sh"
+source "${REPO_DIR}/acmetools/lib/Common.sh"
 
 id="${1}"
 

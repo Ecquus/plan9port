@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -e
+set -x
 
 if [ "$1" = "-h" ] && [ "$2" = "" ]; then
 	p=`basename $0`
@@ -45,8 +46,9 @@ fi
 done
 
 # Run hooks for newly created windows
-9p read acme/log | awk '/^[0-9]+ new / {
-	n = system("Iswin " $1)
-	if (n == 1)
-		system("sh '$hook' " $1 " &")
-}'
+9p read acme/log | while read e; do
+	window_id="$(cut -d' ' -f1 <<< "${e}")"
+	type="$(cut -d' ' -f2 <<< "${e}")"
+    [[ "${type}" != "new" ]] && continue
+    Iswin "${window_id}" || "${hook}" "${window_id}"
+done
