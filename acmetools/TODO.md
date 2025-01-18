@@ -84,8 +84,34 @@ temporary text.
 
 Needs an API key to one of the many AI services, which is really costly.
 
+# TODO: History
+
+A new program called `Hist` could listen on log events, and print each
+opened file into a new line. It could be given an argument to filter
+based on paths (e.g. if I'm only interested in opened files under
+a directtory). A new program could also be written called HistAdd or
+something, that would take a string parameter and would add one line to
+the history entry with the current position. To save on path lengths,
+relative paths could be used under the directory +Hist operates,
+e.g. <proj-dir>/+Hist would list files like ./lib/liba.h instead
+of <proj-dir>/lib/liba.h. Proj.Hist would be added to watch the
+current project, and HistAdd would add to all History buffers that
+are "above" it in the hierarchy. History should also have a maximum
+number of entries.
+
+# TODO: Possible Fuzzy improvements
+
+- Wait between keystrokes (e.g. 2-500ms) before executing the find
+  command
+- If the search string is modified before the previous find command
+  ends, the previous find process should be killed and the new one
+  started
+- If the search string was appended (e.g. the old search string is a
+  prefix of the new search string), the find command should not be
+  executed and instead the current results should be narrowed down
+
 # New theme: xoria
 
 Add a new theme that looks like xoria256-thin in mc. It should have
-black background, with grey tagbars, and that light red as a column button,
-and purple as the selection background.
+black background, with grey tagbars, and that light red as a column
+button, and purple as the selection background.
